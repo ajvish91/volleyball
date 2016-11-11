@@ -46,14 +46,13 @@ h, status = cv2.findHomography(p0, p_dst)
 im_out = cv2.warpPerspective(old_frame, h, (1000,350))
 cv2.imshow('frame',im_out)
 
-print "points", p0, p0.shape
-
 # Create a mask image for drawing purposes
 mask_draw = np.zeros_like(old_frame)
 
 arr = []
-old_abu = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
-arr.append(old_abu)
+old_abu = cv2.cvtColor(im_out, cv2.COLOR_BGR2GRAY)
+#arr.append(old_abu)
+arr.append(im_out.copy())
 fr = 0
 
 #_,img = cap.read()
@@ -90,12 +89,11 @@ while(fr < 330):
         # Put logo in ROI and modify the main image
         dst = cv2.add(img1_bg,img2_fg)
         im_out[0:rows, 0:cols] = dst
-
-        frame_abu = cv2.cvtColor(im_out, cv2.COLOR_BGR2GRAY)
-        arr.append(frame_abu)
+        im_gray = cv2.cvtColor(im_out, cv2.COLOR_BGR2GRAY)
+        arr.append(im_out.copy())
         cv2.imshow('frame',im_out)
 
-        #Background substraction
+        # getting the background
         alpha = 1/float(fr+1)
     	cv2.accumulateWeighted(im_out,avgImg,alpha)
     	im_out = cv2.convertScaleAbs(avgImg)
@@ -124,13 +122,35 @@ while(fr < 330):
     counter= counter + 1
     fr = fr + 1
 
+# Background Substraction
 bg_gray = cv2.cvtColor(normImg, cv2.COLOR_BGR2GRAY)
-print "bg_gray", bg_gray.shape
-print arr[0].shape
-for fra in arr:
-    #frameDelta = cv2.absdiff(bg_gray, fra)
-    cv2.imshow('frame_delta',fra)
-    cv2.imshow('frame_bg_gray',bg_gray)
+bg_gray = cv2.GaussianBlur(bg_gray, (21, 21), 0)
+for fra_ori in arr:
+    fra = cv2.cvtColor(fra_ori, cv2.COLOR_BGR2GRAY)
+    fra = cv2.GaussianBlur(fra, (21, 21), 0)
+    frame_delta = cv2.subtract(bg_gray, fra)
+    thresh = cv2.threshold(frame_delta, 30, 255, cv2.THRESH_BINARY)[1]
+
+    # dilate the thresholded image to fill in holes, then find contours
+	# on thresholded image
+    thresh = cv2.dilate(thresh, None, iterations=1)
+    (cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+
+	# loop over the contours
+    for c in cnts:
+        # if the contour is too small, ignore it
+        if cv2.contourArea(c) < 5 and cv2.contourArea(c) > 10:
+            continue
+
+		# compute the bounding box for the contour, draw it on the frame,
+		# and update the text
+        (x, y, w, h) = cv2.boundingRect(c)
+        cv2.rectangle(fra_ori, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    cv2.imshow('frame_delta',frame_delta)
+    cv2.imshow('frame_thresh',thresh)
+    cv2.imshow('frame_detect',fra_ori)
+
     k = cv2.waitKey(100) & 0xff
     if k == 27:
         break
