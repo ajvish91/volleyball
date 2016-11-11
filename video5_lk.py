@@ -3,21 +3,21 @@ import cv2.cv as cv
 import numpy as np
 import time
 
-cap = cv2.VideoCapture('media/beachVolleyball1.mov')
-FRAME_COUNT = int(cap.get(7))
-print FRAME_COUNT
+cap = cv2.VideoCapture('media/beachVolleyball5.mov')
+#FRAME_COUNT = int(cap.get(7))
+#print FRAME_COUNT
 FRAME_INTERVAL = 1
 #------------ manually chosen features
 FRAME_START = 0
-FRAME_END = 740
-FULL_COURT_WIDTH = 632
-FULL_COURT_HEIGHT = 300
-CORNER_1 = [199, 62]
-CORNER_2 = [48, 88]
-CORNER_3 = [441, 137]
-CORNER_4 = [203, 287]
-p0 = np.array([[120.0,180.0],[345.0,202.0],[295.0,81.0],[250.0,220.0],[45.0,145.0]], np.float32)
-p_dst = np.array([[120.0,180.0],[345.0,202.0],[295.0,81.0],[250.0,220.0],[45.0,145.0]], np.float32)
+FRAME_END = 1120
+FULL_COURT_WIDTH = 636
+FULL_COURT_HEIGHT = 354
+CORNER_1 = [377, 139]
+CORNER_2 = [240, 139]
+CORNER_3 = [574, 254]
+CORNER_4 = [102, 254]
+p0 = np.array([[225.0,152.0],[180.0,189.0],[400.0,200.0],[467,190.0],[188.0, 165.0]], np.float32)
+p_dst = np.array([[225.0,152.0],[180.0,189.0],[400.0,200.0],[467,190.0],[188.0, 165.0]], np.float32)
 #------------ manually chosen features
 
 # Parameters for lucas kanade optical flow
@@ -111,22 +111,23 @@ while(fr < FRAME_END):
     fr_counter += 1
     fr = fr + 1
 
-cv2.imwrite('back1.jpg', normImg)
+#cv2.imwrite('back5.jpg', normImg)
 # Background Substraction
-
 bg_gray = cv2.cvtColor(normImg, cv2.COLOR_BGR2GRAY)
-p_bg = np.array([[196.0,61.0],[46.0,86.0],[439.0,137.0],[204.0,289.0]], np.float32)
+p_bg = np.array([CORNER_1,CORNER_2,CORNER_3,CORNER_4], np.float32)
 
 court_top = cv2.imread('court.png',1)
 p_top = np.array([[40.0,115.0],[40.0,350.0],[515.0,115.0],[515.0,350.0]], np.float32)
 h_top, status = cv2.findHomography(p_bg, p_top)
 print "homography top", h_top
 
-old_panorama = arr[0]
+#cv2.imwrite('panorama_video5.jpg',arr[250])
+old_panorama = arr[250]
 old_panorama_gray = cv2.cvtColor(old_panorama, cv2.COLOR_BGR2GRAY)
-p_player_0 = np.array([[503.0,209.0],[206.0,111.0],[96.0,81.0],[164.0,70.0]], np.float32)
+p_player_0 = np.array([[298.0,218.0],[278.0,143.0],[320.0,166.0],[351.0,143.0]], np.float32)
 mask_draw = np.zeros_like(old_panorama)
 
+arr = arr[250:]
 #bg_gray = cv2.GaussianBlur(bg_gray, (21, 21), 0)
 for fra_ori in arr:
     fra_gray = cv2.cvtColor(fra_ori, cv2.COLOR_BGR2GRAY)
