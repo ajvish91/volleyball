@@ -1,6 +1,7 @@
 import cv2
 import cv2.cv as cv
 import numpy as np
+import equalizeColor
 
 cap = cv2.VideoCapture('media/beachVolleyball6.mov')
 # FRAME_COUNT = int(cap.get(7))
@@ -147,14 +148,15 @@ h_top, status = cv2.findHomography(p_bg, p_top)
 
 bg_gray = cv2.GaussianBlur(bg_gray, (21, 21), 0)
 for fra_ori in arr:
+    fra_ori = equalizeColor.equalizeBGRImage(fra_ori)
     fra = cv2.cvtColor(fra_ori, cv2.COLOR_BGR2GRAY)
     fra = cv2.GaussianBlur(fra, (21, 21), 0)
     frame_delta = cv2.subtract(bg_gray, fra)
-    thresh = cv2.threshold(frame_delta, 30, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.threshold(frame_delta, 70, 255, cv2.THRESH_BINARY)[1]
 
     # dilate the thresholded image to fill in holes, then find contours
     # on thresholded image
-    thresh = cv2.dilate(thresh, None, iterations=6)
+    thresh = cv2.dilate(thresh, None, iterations=10)
     (cnts, _) = cv2.findContours(thresh.copy(),
                                  cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
