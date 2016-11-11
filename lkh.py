@@ -82,7 +82,7 @@ while(fr < 1010):
     ret,frame = cap.read()
     rows,cols,channels = frame.shape
     frame = frame[0:rows, 0:cols-5]
-    if (counter%2==0):
+    if (counter%1==0):
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -129,7 +129,7 @@ while(fr < 1010):
             cv2.circle(frame,(a, b),3,color[i].tolist(),-1)
         img = cv2.add(frame,mask_draw)
 
-        #cv2.imshow('other',img)
+        cv2.imshow('tracking',img)
         k = cv2.waitKey(1) & 0xff
         if k == 27:
             break
@@ -143,7 +143,15 @@ while(fr < 1010):
     fr = fr + 1
 
 # Background Substraction
+#cv2.imwrite('bg_3.png',normImg)
 bg_gray = cv2.cvtColor(normImg, cv2.COLOR_BGR2GRAY)
+p_bg = np.array([[140.0,210.0],[90.0,316.0],[743.0,187.0],[800.0,282.0]], np.float32)
+
+court_top = cv2.imread('court.png',1)
+p_top = np.array([[40.0,115.0],[40.0,350.0],[515.0,115.0],[515.0,350.0]], np.float32)
+h_top, status = cv2.findHomography(p_bg, p_top)
+print "homography top", h_top
+
 bg_gray = cv2.GaussianBlur(bg_gray, (21, 21), 0)
 for fra_ori in arr:
     fra = cv2.cvtColor(fra_ori, cv2.COLOR_BGR2GRAY)
@@ -152,11 +160,14 @@ for fra_ori in arr:
     thresh = cv2.threshold(frame_delta, 30, 255, cv2.THRESH_BINARY)[1]
 
     # dilate the thresholded image to fill in holes, then find contours
+
     # on thresholded image
-    thresh = cv2.dilate(thresh, None, iterations=1)
+    thresh = cv2.dilate(thresh, None, iterations=6)
     (cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 
+    court_top_copy = court_top.copy()
     # loop over the contours
+
     for c in cnts:
         # if the contour is too small, ignore it
         if cv2.contourArea(c) < 5 and cv2.contourArea(c) > 10:
@@ -167,9 +178,32 @@ for fra_ori in arr:
         (x, y, w, h) = cv2.boundingRect(c)
         cv2.rectangle(fra_ori, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    cv2.imshow('frame_delta',frame_delta)
-    cv2.imshow('frame_thresh',thresh)
+        xi = (x+x+h)/2
+        yi = y+h
+
+        h0 = h_top[0,0]
+        h1 = h_top[0,1]
+        h2 = h_top[0,2]
+        h3 = h_top[1,0]
+        h4 = h_top[1,1]
+        h5 = h_top[1,2]
+        h6 = h_top[2,0]
+        h7 = h_top[2,1]
+        h8 = h_top[2,2]
+
+        tx = (h0*xi + h1*yi + h2)
+        ty = (h3*xi + h4*yi + h5)
+        tz = (h6*xi + h7*yi + h8)
+
+        px = int(tx/tz)
+        py = int(ty/tz)
+        #Print the player on top down view
+        cv2.circle(court_top_copy,(px, py),3,np.array([255,0,0]),-1)
+
+    #cv2.imshow('frame_delta',frame_delta)
+    #cv2.imshow('frame_thresh',thresh)
     cv2.imshow('frame_detect',fra_ori)
+    cv2.imshow('court_top', court_top_copy)
 
     k = cv2.waitKey(100) & 0xff
     if k == 27:
